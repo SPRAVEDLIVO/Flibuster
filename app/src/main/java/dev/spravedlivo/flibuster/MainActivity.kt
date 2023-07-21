@@ -1,6 +1,7 @@
 package dev.spravedlivo.flibuster
 
 import android.content.Context
+import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -32,6 +33,8 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         openDocumentTreeLauncher = registerForActivityResult(ActivityResultContracts.OpenDocumentTree()) {
             if (it == null) return@registerForActivityResult
+            grantUriPermission(packageName, it, Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)
+
             val ctx = this as Context
             lifecycleScope.launch {
                 Settings.save(ctx, "download_folder", it.toString())

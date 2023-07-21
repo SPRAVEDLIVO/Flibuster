@@ -22,6 +22,7 @@ suspend fun bookInfo(context: Context, url: String, onError: (String) -> Unit): 
         return null
     }
     val bookScreen = BookInfo()
+    bookScreen.url = url
     val document = Jsoup.parse(resp.responseBodyString!!)
     // let the trolling begin
     val authorsList = mutableListOf<UrlName>()

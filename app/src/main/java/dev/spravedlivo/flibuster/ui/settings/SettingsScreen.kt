@@ -50,8 +50,8 @@ fun SettingsScreen(context: Context) {
     }
     var read by remember { mutableStateOf(Settings.readFromPreferencesOrDefault(state.preferences!!, "download_folder", "")!!) }
 
-    viewModel.register { a, b ->
-        read = b
+    viewModel.register { _, newValue ->
+        read = newValue
     }
     Column {
 
