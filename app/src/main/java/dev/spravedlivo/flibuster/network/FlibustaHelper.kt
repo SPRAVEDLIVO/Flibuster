@@ -1,57 +1,72 @@
 package dev.spravedlivo.flibuster.network
 
+import android.content.Context
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import dev.spravedlivo.flibuster.Settings
 import okhttp3.Call
 import okhttp3.Callback
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
+import okhttp3.ResponseBody.Companion.toResponseBody
 import java.io.IOException
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
+enum class ResponseType {
+    BYTES,
+    STRING;
+}
+
+data class ApiResponse(val response: Response?, val error: String?, val responseType: ResponseType) {
+    var responseBodyString: String? = null
+    var responseBodyBytes: ByteArray? = null
+
+    init {
+        if (response?.body != null) {
+            when(responseType) {
+                ResponseType.BYTES -> responseBodyBytes = response.body!!.bytes()
+                ResponseType.STRING -> responseBodyString = response.body!!.string()
+            }
+        }
+    }
+}
 
 object FlibustaHelper {
-    private var url: String = "https://flibusta.is"
     private val client = OkHttpClient()
 
-    fun request(query: String, onResponse: (Response) -> Unit, onError: (String) -> Unit) {
+    suspend fun request(context: Context, query: String, responseType: ResponseType = ResponseType.STRING): ApiResponse {
+        val url = Settings.readOrDefault(context, "flibusta_url") ?: return ApiResponse(null, "No flibusta url provided.", responseType)
         val request = Request.Builder()
             .url("$url$query")
             .build()
 
-        client.newCall(request).enqueue(object : Callback {
-            override fun onFailure(call: Call, e: IOException) {
-                onError(e.message.toString())
-            }
-
-            override fun onResponse(call: Call, response: Response) {
-                response.use {
-                    if (!response.isSuccessful) {
-                        onError("${response.code} ${response.message}")
-                    }
-                    else onResponse(response)
+        return suspendCoroutine { continuation ->
+            client.newCall(request).enqueue(object : Callback {
+                override fun onFailure(call: Call, e: IOException) {
+                    continuation.resume(ApiResponse(null, e.message.toString(), responseType))
                 }
-            }
-        })
+
+                override fun onResponse(call: Call, response: Response) {
+                    response.use {
+                        if (!response.isSuccessful) {
+                            continuation.resume(ApiResponse(null, "${response.code} ${response.message}", responseType))
+                        }
+                        else continuation.resume(ApiResponse(response, null, responseType))
+                    }
+                }
+            })
+        }
+
     }
     // keep in mind that body is not availible after resume
-    private suspend fun requestInScope(query: String, boundOnError: (String) -> Unit): String = suspendCoroutine { cont ->
-        request(query, {
-            cont.resume(it.body!!.string()) }, {
-            boundOnError(it) })
-    }
 
-    fun requestScope(onError: (String) -> Unit, block: (suspend (String) -> String) -> Unit) {
-        block {
-            return@block requestInScope(it, onError)
-        }
-    }
-    suspend fun imageFromUrl(localUrl: String, onError: (String) -> Unit) = suspendCoroutine {continuation ->
-        request(localUrl, {
-            val byteArray = it.body!!.bytes()
-            continuation.resume(BitmapFactory.decodeByteArray(byteArray, 0, byteArray.size))
-        }, { onError(it) })
+    suspend fun imageFromUrl(context: Context, localUrl: String, onError: (String) -> Unit): Bitmap? {
+        val resp = request(context, localUrl, ResponseType.BYTES)
+        if (resp.error != null) { onError(resp.error); return null }
+        val byteArray = resp.responseBodyBytes!!
+        return BitmapFactory.decodeByteArray(byteArray, 0, byteArray.size)
     }
 }
 

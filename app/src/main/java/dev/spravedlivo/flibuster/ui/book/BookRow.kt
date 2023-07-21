@@ -1,4 +1,4 @@
-package dev.spravedlivo.flibuster.ui.components
+package dev.spravedlivo.flibuster.ui.book
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable

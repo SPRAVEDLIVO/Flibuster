@@ -1,8 +1,9 @@
-package dev.spravedlivo.flibuster.ui.components
+package dev.spravedlivo.flibuster.ui.booksearch
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -25,6 +26,7 @@ fun BookSearch(onSearch: (String) -> Unit, modifier: Modifier = Modifier) {
             value = text,
             singleLine = true,
             onValueChange = { text = it },
+            keyboardActions = KeyboardActions(onDone = { onSearch(text) }),
             label = { Text(stringResource(id = R.string.book_searchbar_hint)) },
         )
         Button(onClick = {

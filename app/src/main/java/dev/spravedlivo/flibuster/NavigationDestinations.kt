@@ -11,6 +11,10 @@ object BookSearch : NavigationDestinations {
     override val route: String = "booksearch"
 }
 
+object SettingsRoute : NavigationDestinations {
+    override val route: String = "settings"
+}
+
 object Book : NavigationDestinations {
     override val route: String = "book"
     const val bookUrl = "bookUrl"

@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
+// MVI
 class BookSearchScreenViewModel : ViewModel() {
     private val _state = MutableStateFlow(BookSearchScreenState())
     val state = _state.asStateFlow()
