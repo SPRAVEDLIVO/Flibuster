@@ -2,8 +2,6 @@ package dev.spravedlivo.flibuster.ui.book
 
 import android.content.Context
 import android.net.Uri
-import android.provider.DocumentsContract
-import android.provider.DocumentsProvider
 import android.widget.Toast
 import android.widget.Toast.LENGTH_SHORT
 import androidx.compose.foundation.Image
@@ -29,7 +27,6 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
-import androidx.core.net.toFile
 import androidx.documentfile.provider.DocumentFile
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.spravedlivo.flibuster.R
@@ -120,7 +117,6 @@ fun BookScreen(context: Context, url: String) {
                             state.showDetails!!.downloadFormats.forEach {
                                 Button(onClick = {
                                     coroutineScope.launch {
-                                        // TODO workmngr
                                         val resp = FlibustaHelper.request(context, "/b/${state.showDetails!!.url}/${it.second}", ResponseType.BYTES)
                                         if (resp.error != null) {
                                             Toast.makeText(context, resp.error, LENGTH_SHORT).show()
@@ -131,24 +127,23 @@ fun BookScreen(context: Context, url: String) {
                                             Toast.makeText(context, "Please set download folder in settings.", LENGTH_SHORT).show()
                                             return@launch
                                         }
-
                                         val fileName = "${state.showDetails!!.url}.${it.first.substring(IntRange(1, it.first.length-2))}"
-                                        //val uriFile = Uri.withAppendedPath(Uri.parse(folder), fileName)
 
                                         val uri = DocumentFile.fromTreeUri(context, Uri.parse(folder))
-                                        val created = uri?.createFile("text/plain", fileName)
-                                        val stream = context.contentResolver.openOutputStream(created!!.uri, "w")
+                                        val created = uri?.createFile("", fileName)
+                                        if (created == null) {
+                                            Toast.makeText(context, "Please set download folder once again in settings.", LENGTH_SHORT).show()
+                                            return@launch
+                                        }
+
+                                        val stream = context.contentResolver.openOutputStream(created.uri, "w")
                                         stream?.apply {
                                             stream.write(resp.responseBodyBytes!!)
                                             stream.flush()
                                             stream.close()
                                         }
+                                        Toast.makeText(context, "Download finished!", LENGTH_SHORT).show()
 
-                                        /*
-                                        val response = resp.responseBodyBytes
-
-
-                                        file.writeBytes(response!!)*/
                                     }
                                     viewModel.updateShowPopup(false)
                                 }) {
