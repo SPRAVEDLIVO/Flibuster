@@ -34,6 +34,7 @@ import dev.spravedlivo.flibuster.Settings
 import dev.spravedlivo.flibuster.network.FlibustaHelper
 import dev.spravedlivo.flibuster.network.ResponseType
 import dev.spravedlivo.flibuster.network.bookInfo
+import dev.spravedlivo.flibuster.network.downloadBook
 import dev.spravedlivo.flibuster.viewmodel.BookScreenViewModel
 import kotlinx.coroutines.launch
 
@@ -117,33 +118,10 @@ fun BookScreen(context: Context, url: String) {
                             state.showDetails!!.downloadFormats.forEach {
                                 Button(onClick = {
                                     coroutineScope.launch {
-                                        val resp = FlibustaHelper.request(context, "/b/${state.showDetails!!.url}/${it.second}", ResponseType.BYTES)
-                                        if (resp.error != null) {
-                                            Toast.makeText(context, resp.error, LENGTH_SHORT).show()
-                                            return@launch
-                                        }
-                                        val folder = Settings.read(context, "download_folder")
-                                        if (folder.isNullOrBlank()) {
-                                            Toast.makeText(context, "Please set download folder in settings.", LENGTH_SHORT).show()
-                                            return@launch
-                                        }
-                                        val fileName = "${state.showDetails!!.url}.${it.first.substring(IntRange(1, it.first.length-2))}"
-
-                                        val uri = DocumentFile.fromTreeUri(context, Uri.parse(folder))
-                                        val created = uri?.createFile("", fileName)
-                                        if (created == null) {
-                                            Toast.makeText(context, "Please set download folder once again in settings.", LENGTH_SHORT).show()
-                                            return@launch
-                                        }
-
-                                        val stream = context.contentResolver.openOutputStream(created.uri, "w")
-                                        stream?.apply {
-                                            stream.write(resp.responseBodyBytes!!)
-                                            stream.flush()
-                                            stream.close()
-                                        }
-                                        Toast.makeText(context, "Download finished!", LENGTH_SHORT).show()
-
+                                        downloadBook(
+                                            context,
+                                            "/b/${state.showDetails!!.url}/${it.second}",
+                                            "${state.showDetails!!.url}.${it.first.substring(IntRange(1, it.first.length-2))}")
                                     }
                                     viewModel.updateShowPopup(false)
                                 }) {
